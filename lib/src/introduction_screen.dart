@@ -62,6 +62,10 @@ class IntroductionScreen extends StatefulWidget {
   /// Dots decorator to custom dots color, size and spacing
   final DotsDecorator dotsDecorator;
 
+  /// Decorator to customize the appearance of the progress dots container.
+  /// This is useful when the background image is full screen.
+  final Decoration dotsContainerDecorator;
+
   /// Animation duration in millisecondes
   ///
   /// @Default `350`
@@ -92,19 +96,6 @@ class IntroductionScreen extends StatefulWidget {
   /// @Default `Curves.easeIn`
   final Curve curve;
 
-  /// Color of buttons
-  final Color color;
-
-  /// Color of skip button
-  final Color skipColor;
-
-  /// Color of next button
-  final Color nextColor;
-
-  /// Color of done button
-  final Color doneColor;
-
-
   const IntroductionScreen({
     Key key,
     @required this.pages,
@@ -121,16 +112,13 @@ class IntroductionScreen extends StatefulWidget {
     this.freeze = false,
     this.globalBackgroundColor,
     this.dotsDecorator = const DotsDecorator(),
+    this.dotsContainerDecorator,
     this.animationDuration = 350,
     this.initialPage = 0,
     this.skipFlex = 1,
     this.dotsFlex = 1,
     this.nextFlex = 1,
     this.curve = Curves.easeIn,
-    this.color,
-    this.skipColor,
-    this.nextColor,
-    this.doneColor
   })  : assert(pages != null),
         assert(
           pages.length > 0,
@@ -195,7 +183,9 @@ class IntroductionScreenState extends State<IntroductionScreen> {
   bool _onScroll(ScrollNotification notification) {
     final metrics = notification.metrics;
     if (metrics is PageMetrics) {
-      setState(() => _currentPage = metrics.page);
+      if (mounted) {
+        setState(() => _currentPage = metrics.page);
+      }
     }
     return false;
   }
@@ -207,19 +197,16 @@ class IntroductionScreenState extends State<IntroductionScreen> {
 
     final skipBtn = IntroButton(
       child: widget.skip,
-      color: widget.skipColor ?? widget.color,
       onPressed: isSkipBtn ? _onSkip : null,
     );
 
     final nextBtn = IntroButton(
       child: widget.next,
-      color: widget.nextColor ?? widget.color,
       onPressed: widget.showNextButton && !_isScrolling ? next : null,
     );
 
     final doneBtn = IntroButton(
       child: widget.done,
-      color: widget.doneColor ?? widget.color,
       onPressed: widget.onDone,
     );
 
@@ -243,38 +230,41 @@ class IntroductionScreenState extends State<IntroductionScreen> {
             left: 16.0,
             right: 16.0,
             child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: widget.skipFlex,
-                    child: isSkipBtn
-                        ? skipBtn
-                        : Opacity(opacity: 0.0, child: skipBtn),
-                  ),
-                  Expanded(
-                    flex: widget.dotsFlex,
-                    child: Center(
-                      child: widget.isProgress
-                          ? DotsIndicator(
-                              dotsCount: widget.pages.length,
-                              position: _currentPage,
-                              decorator: widget.dotsDecorator,
-                              onTap: widget.isProgressTap && !widget.freeze
-                                  ? (pos) => animateScroll(pos.toInt())
-                                  : null,
-                            )
-                          : const SizedBox(),
+              child: Container(
+                decoration: widget.dotsContainerDecorator,
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: widget.skipFlex,
+                      child: isSkipBtn
+                          ? skipBtn
+                          : Opacity(opacity: 0.0, child: skipBtn),
                     ),
-                  ),
-                  Expanded(
-                    flex: widget.nextFlex,
-                    child: isLastPage
-                        ? doneBtn
-                        : widget.showNextButton
-                            ? nextBtn
-                            : Opacity(opacity: 0.0, child: nextBtn),
-                  ),
-                ],
+                    Expanded(
+                      flex: widget.dotsFlex,
+                      child: Center(
+                        child: widget.isProgress
+                            ? DotsIndicator(
+                                dotsCount: widget.pages.length,
+                                position: _currentPage,
+                                decorator: widget.dotsDecorator,
+                                onTap: widget.isProgressTap && !widget.freeze
+                                    ? (pos) => animateScroll(pos.toInt())
+                                    : null,
+                              )
+                            : const SizedBox(),
+                      ),
+                    ),
+                    Expanded(
+                      flex: widget.nextFlex,
+                      child: isLastPage
+                          ? doneBtn
+                          : widget.showNextButton
+                              ? nextBtn
+                              : Opacity(opacity: 0.0, child: nextBtn),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
